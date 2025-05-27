@@ -49,11 +49,8 @@ resource "aws_acm_certificate_validation" "cert-validate" {
 
 # Create S3 bucket where the files will be stored
 resource "aws_s3_bucket" "static-website-bucket" {
-  bucket = var.bucket_name
+  bucket = var.domain_name
   region = var.region
-  tags = {
-    Name  = "my-devops-website.com"
-  }
 }
 
 #Enable Static Website Hosting on S3 bucker
@@ -127,20 +124,47 @@ resource "aws_cloudfront_distribution" "site-cache" {
     }
   }
 viewer_certificate {
-    cloudfront_default_certificate = true
+    cm_certificate_arn            = aws_acm_certificate.cert.arn
+    ssl_support_method             = "sni-only"
+    minimum_protocol_version       = "TLSv1.2_2021"
   }
 
-  restrictions {
+restrictions {
     geo_restriction {
       restriction_type = "none"
     }
   }
-
-  tags = {
+aliases = [var.domain_name]
+tags = {
     Name = "CDN-Static-Website"
+  }
+depends_on = [aws_acm_certificate_validation.cert_validate_complete]
+}
+
+resource "aws_route53_record" "cdn_alias" {
+  zone_id = aws_route53_zone.domain.zone_id
+  name    = var.domain_name
+  type    = "A"
+
+  alias {
+    name                   = aws_cloudfront_distribution.site-cache.domain_name
+    zone_id                = aws_cloudfront_distribution.site-cache.hosted_zone_id
+    evaluate_target_health = true
   }
 }
 
+# Create Health Check
+resource "aws_route53_health_check" "site_health" {
+  fqdn              = aws_cloudfront_distribution.site-cache.domain_name
+  port              = 443
+  type              = "HTTPS"
+  resource_path     = "/"
+  failure_threshold = 3
+  request_interval  = 30
 
+  tags = {
+    Name = "StaticSiteHealthCheck"
+  }
+}
 
   
