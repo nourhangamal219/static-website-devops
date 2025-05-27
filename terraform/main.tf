@@ -3,6 +3,50 @@ provider "aws" {
   region = var.region
 }
 
+# Another provider for ACM certificate
+provider "aws" {
+  alias  = "us_east_1"
+  region = "us-east-1"
+}
+
+# Create R53 Zone
+resource "aws_route53_zone" "domain" {
+  name = var.domain_name
+}
+
+# Create ACM certificate
+resource "aws_acm_certificate" "cert" {
+  provider          = aws.us_east_1
+  domain_name       = var.domain_name
+  validation_method = "DNS"
+
+  lifecycle {
+    create_before_destroy = true
+  }
+}
+
+# Add cert validation records in R53 zone
+resource "aws_route53_record" "add-cert" {
+  for_each = {
+    for dvo in aws_acm_certificate.cert.domain_validation_options : dvo.domain_name => {
+      name   = dvo.resource_record_name
+      record = dvo.resource_record_value
+      type   = dvo.resource_record_type
+    }
+  }
+  name            = each.value.name
+  records         = [each.value.record]
+  ttl             = 60
+  type            = each.value.type
+  zone_id         = data.aws_route53_zone.domain.zone_id
+}
+
+# Validate Cert
+resource "aws_acm_certificate_validation" "cert-validate" {
+  certificate_arn         = aws_acm_certificate.cert.arn
+  validation_record_fqdns = [for record in aws_route53_record.add-cert : record.fqdn]
+}
+
 # Create S3 bucket where the files will be stored
 resource "aws_s3_bucket" "static-website-bucket" {
   bucket = var.bucket_name
