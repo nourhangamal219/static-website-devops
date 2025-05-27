@@ -4,5 +4,5 @@ output "website_url" {
 }
 
 output "cdn_domain" {
-  value = aws_cloudfront_distribution.cdn.domain_name
+  value = aws_cloudfront_distribution.site-cache.domain_name
 }
