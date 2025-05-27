@@ -153,12 +153,12 @@ resource "aws_route53_record" "cdn_alias" {
   }
 }
 
-# Create Health Check
+# Create Health Check 
 resource "aws_route53_health_check" "site_health" {
-  fqdn              = aws_cloudfront_distribution.site-cache.domain_name
+  fqdn              = var.domain_name
   port              = 443
   type              = "HTTPS"
-  resource_path     = "/"
+  resource_path     = "/index.html"
   failure_threshold = 3
   request_interval  = 30
 
@@ -166,5 +166,63 @@ resource "aws_route53_health_check" "site_health" {
     Name = "StaticSiteHealthCheck"
   }
 }
+
+# Create Health Check for s3 endpoint
+resource "aws_route53_health_check" "s3-health" {
+  fqdn              = aws_s3_bucket.static-website-bucket.bucket_regional_domain_name
+  port              = 443
+  type              = "HTTPS"
+  resource_path     = "/index.html"
+  failure_threshold = 3
+  request_interval  = 30
+}
+
+# Create SNS Topic
+resource "aws_sns_topic" "health-check" {
+  name = "my-site-health-check"
+}
+
+# Create SNS Subscription
+resource "aws_sns_topic_subscription" "user_updates_sqs_target" {
+  topic_arn = aws_sns_topic.health-check.arn
+  protocol  = "email"
+  endpoint  = var.mail
+}
+
+# Create Cloudwatch Alert
+resource "aws_cloudwatch_metric_alarm" "s3_health_alarm" {
+  alarm_name          = "S3HealthFail"
+  comparison_operator = "LessThanThreshold"
+  evaluation_periods  = 2
+  metric_name         = "HealthCheckStatus"
+  namespace           = "AWS/Route53"
+  period              = 60
+  statistic           = "Average"
+  threshold           = 1
+
+  dimensions = {
+    HealthCheckId = aws_route53_health_check.s3-health.id
+  }
+
+  alarm_actions = [aws_sns_topic.health-check.arn]
+}
+
+resource "aws_cloudwatch_metric_alarm" "site_health_alarm" {
+  alarm_name          = "SiteHealthFail"
+  comparison_operator = "LessThanThreshold"
+  evaluation_periods  = 2
+  metric_name         = "HealthCheckStatus"
+  namespace           = "AWS/Route53"
+  period              = 60
+  statistic           = "Average"
+  threshold           = 1
+
+  dimensions = {
+    HealthCheckId = aws_route53_health_check.site_health.id
+  }
+
+  alarm_actions = [aws_sns_topic.health-check.arn]
+}
+
 
   
