@@ -62,7 +62,7 @@ resource "aws_cloudfront_origin_access_control" "s3-origin" {
 # Create CloudFront for caching
 resource "aws_cloudfront_distribution" "site-cache" {
   origin {
-    domain_name              = var.domain_name
+    domain_name              = aws_s3_bucket.static-website-bucket.bucket_regional_domain_name
     origin_access_control_id = aws_cloudfront_origin_access_control.s3-origin.id
     origin_id                = "S3Origin"
   }
