@@ -1,4 +1,13 @@
-# Provide Website URL
-output "website_url" {
-  value = aws_s3_bucket.static_site.website_endpoint
+variable "region" {
+  default = "eu-west-2"
+}
+
+variable "bucket_name" {
+  description = "S3 bucket for static site"
+  type        = string
+}
+
+variable "domain_name" {
+  description = "Custom domain name"
+  type        = string
 }
