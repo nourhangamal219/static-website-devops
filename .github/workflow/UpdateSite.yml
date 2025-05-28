@@ -1,0 +1,27 @@
+name: Updating static website files
+on:
+ pull_request:
+   branches:
+   - main
+   paths:
+   - site/**
+ push:
+    branches:
+      - main
+    paths:
+     - site/**
+jobs:
+  deploy:
+      runs-on: ubuntu-latest
+      env:
+        AWS_REGION: eu-west-1
+      steps:
+          - name: Checkout code
+            uses: actions/checkout@v3
+              
+          - name: Upload Website Files
+            run: |
+              aws s3 sync site/ s3://${{ secrets.DOMAIN_NAME }}/ --delete
+            env:
+              AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+              AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
