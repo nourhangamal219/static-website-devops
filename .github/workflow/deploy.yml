@@ -30,14 +30,22 @@ jobs:
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
 
+     - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.TF_VAR_aws_region }}
+
       - name: Terraform Init
         working-directory: terraform
         run: terraform init
- - name: Terraform Plan
+        
+      - name: Terraform Plan
         if: github.event_name == 'pull_request'
         id: plan
         run: |
-          terraform plan -no-color > tfplan.txt
+          terraform plan -var="domain_name=${{ secrets.DOMAIN_NAME }}"  -var="mail=${{ secrets.MAIL}}" -var="region=${AWS_REGION} -no-color > tfplan.txt
           cat tfplan.txt
 
       - name: Comment Terraform Plan on PR
@@ -47,13 +55,9 @@ jobs:
           path: tfplan.txt
           recreate: true
 
-      - name: Terraform Plan
-        working-directory: terraform
-        run: terraform plan -var="domain_name=${{ secrets.DOMAIN_NAME }}"  -var="mail=${{ secrets.MAIL}}" -var="region=${AWS_REGION}
-
       - name: Terraform Apply
-        working-directory: terraform
-        run: terraform apply -auto-approve -var="domain_name=${{ secrets.DOMAIN_NAME }}"  -var="mail=${{ secrets.MAIL}}" -var="region=${AWS_REGION}
+        if: github.event_name == 'push'
+        run: terraform apply -auto-approve
 
       - name: Upload Website Files
         run: |
