@@ -1,19 +1,26 @@
 name: Configuring Static Website on S3
 
 on:
- push:
-   branches:
-   - main
-   paths:
-   - terraform/**
  pull_request:
    branches:
    - main
    paths:
    - terraform/**
+ push:
+    branches:
+      - main
+    paths:
+     - terraform/**
+     
+ permissions:
+  contents: read
+  pull-requests: write  # Needed for commenting on PRs
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    with:
+      terraform_wrapper: false
     env:
       AWS_REGION: eu-west-1
     steps:
@@ -26,6 +33,19 @@ jobs:
       - name: Terraform Init
         working-directory: terraform
         run: terraform init
+ - name: Terraform Plan
+        if: github.event_name == 'pull_request'
+        id: plan
+        run: |
+          terraform plan -no-color > tfplan.txt
+          cat tfplan.txt
+
+      - name: Comment Terraform Plan on PR
+        if: github.event_name == 'pull_request'
+        uses: marocchino/sticky-pull-request-comment@v2
+        with:
+          path: tfplan.txt
+          recreate: true
 
       - name: Terraform Plan
         working-directory: terraform
