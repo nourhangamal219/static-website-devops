@@ -3,12 +3,6 @@ provider "aws" {
   region = var.region
 }
 
-# Another provider for ACM certificate
-provider "aws" {
-  alias  = "us_east_1"
-  region = "us-east-1"
-}
-
 # Create R53 Zone
 resource "aws_route53_zone" "domain" {
   name = var.domain_name
@@ -16,7 +10,6 @@ resource "aws_route53_zone" "domain" {
 
 # Create ACM certificate
 resource "aws_acm_certificate" "cert" {
-  provider          = aws.us_east_1
   domain_name       = var.domain_name
   validation_method = "DNS"
 
