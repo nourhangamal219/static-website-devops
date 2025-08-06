@@ -3,12 +3,6 @@ provider "aws" {
   region = var.region
 }
 
-# Another provider for ACM certificate
-provider "aws" {
-  alias  = "us_east_1"
-  region = "us-east-1"
-}
-
 # Create R53 Zone
 resource "aws_route53_zone" "domain" {
   name = var.domain_name
@@ -16,7 +10,6 @@ resource "aws_route53_zone" "domain" {
 
 # Create ACM certificate
 resource "aws_acm_certificate" "cert" {
-  provider          = aws.us_east_1
   domain_name       = var.domain_name
   validation_method = "DNS"
 
@@ -38,7 +31,7 @@ resource "aws_route53_record" "add-cert" {
   records         = [each.value.record]
   ttl             = 60
   type            = each.value.type
-  zone_id         = data.aws_route53_zone.domain.zone_id
+  zone_id         = aws_route53_zone.domain.zone_id
 }
 
 # Validate Cert
@@ -64,16 +57,6 @@ resource "aws_s3_bucket_website_configuration" "static-website-conf" {
   error_document {
     key = "index.html"
   }
-}
-
-# Edit Block Public Access settings
-resource "aws_s3_bucket_public_access_block" "allow-access" {
-  bucket = aws_s3_bucket.static-website-bucket.id
-
-  block_public_acls       = false
-  block_public_policy     = false
-  ignore_public_acls      = false
-  restrict_public_buckets = false
 }
 
 # Add a bucket policy that makes your bucket content publicly available
@@ -124,7 +107,7 @@ resource "aws_cloudfront_distribution" "site-cache" {
     }
   }
 viewer_certificate {
-    cm_certificate_arn            = aws_acm_certificate.cert.arn
+    acm_certificate_arn            = aws_acm_certificate.cert.arn
     ssl_support_method             = "sni-only"
     minimum_protocol_version       = "TLSv1.2_2021"
   }
@@ -138,7 +121,7 @@ aliases = [var.domain_name]
 tags = {
     Name = "CDN-Static-Website"
   }
-depends_on = [aws_acm_certificate_validation.cert_validate_complete]
+depends_on = [aws_acm_certificate_validation.cert-validate]
 }
 
 resource "aws_route53_record" "cdn_alias" {
@@ -223,6 +206,3 @@ resource "aws_cloudwatch_metric_alarm" "site_health_alarm" {
 
   alarm_actions = [aws_sns_topic.health-check.arn]
 }
-
-
-  
