@@ -3,12 +3,10 @@ name: Configuring Static Website on S3
 # Trigger workflow when a pull request is raised to merge with main
 on:
  pull_request:
-   branches:
-   - main
    paths:
    - terraform/**
  
- permissions:
+permissions:
   contents: read
   id-token: write
   pull-requests: write  # Needed for commenting on PRs
