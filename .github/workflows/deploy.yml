@@ -1,68 +1,58 @@
 name: Configuring Static Website on S3
 
+# Trigger workflow when a pull request is raised to merge with main
 on:
  pull_request:
    branches:
    - main
    paths:
    - terraform/**
- push:
-    branches:
-      - main
-    paths:
-     - terraform/**
-     
+ 
  permissions:
   contents: read
+  id-token: write
   pull-requests: write  # Needed for commenting on PRs
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    with:
-      terraform_wrapper: false
-    env:
-      AWS_REGION: eu-west-1
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
-
-     - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v2
+        
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4.3.1
         with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ env.TF_VAR_aws_region }}
+          role-to-assume: ${{ secrets.AWS_ROLE }}
 
-      - name: Terraform Init
+      - name: Intialize Terraform
         working-directory: terraform
         run: terraform init
         
       - name: Terraform Plan
-        if: github.event_name == 'pull_request'
-        id: plan
-        run: |
-          terraform plan -var="domain_name=${{ secrets.DOMAIN_NAME }}"  -var="mail=${{ secrets.MAIL}}" -var="region=${AWS_REGION} -no-color > tfplan.txt
-          cat tfplan.txt
+        run: terraform plan -var="domain_name=${{ secrets.DOMAIN_NAME }}"  -var="mail=${{ secrets.MAIL}}" -var="region=${{ secrets.AWS_REGION} -no-color > tfplan.txt
 
-      - name: Comment Terraform Plan on PR
-        if: github.event_name == 'pull_request'
-        uses: marocchino/sticky-pull-request-comment@v2
+      - name: Upload Plan Output
+        uses: actions/upload-artifact@v3
         with:
+          name: terraform-plan
           path: tfplan.txt
-          recreate: true
+      - name: Comment on PR
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const fs = require('fs');
+            const planOutput = fs.readFileSync('plan.txt', 'utf8');
+            const commentBody = `### Terraform Plan Output\n\`\`\`\n${planOutput}\n\`\`\``;
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.payload.pull_request.number,
+              body: commentBody
+            });
 
-      - name: Terraform Apply
-        if: github.event_name == 'push'
-        run: terraform apply -auto-approve
-
-      - name: Upload Website Files
-        run: |
-          aws s3 sync site/ s3://${{ secrets.DOMAIN_NAME }}/ --delete
-        env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
 
