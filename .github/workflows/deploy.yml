@@ -37,7 +37,7 @@ jobs:
         run: terraform plan -var="domain_name=${{ secrets.DOMAIN_NAME }}"  -var="mail=${{ secrets.MAIL}}" -var="region=${{ secrets.AWS_REGION}}" -no-color > tfplan.txt
 
       - name: Upload Plan Output
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: terraform-plan
           path: tfplan.txt
