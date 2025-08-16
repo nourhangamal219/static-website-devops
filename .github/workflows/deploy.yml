@@ -50,7 +50,7 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
             const fs = require('fs');
-            const planOutput = fs.readFileSync('plan.txt', 'utf8');
+            const planOutput = fs.readFileSync('terraform/tfplan.txt', 'utf8');
             const commentBody = `### Terraform Plan Output\n\`\`\`\n${planOutput}\n\`\`\``;
             await github.rest.issues.createComment({
               owner: context.repo.owner,
