@@ -128,7 +128,7 @@ aliases = [var.domain_name]
 tags = {
     Name = "CDN-Static-Website"
   }
-depends_on = [aws_acm_certificate_validation.cert_validate]
+depends_on = [aws_acm_certificate_validation.cert-validate]
 }
 
 resource "aws_route53_record" "cdn_alias" {
