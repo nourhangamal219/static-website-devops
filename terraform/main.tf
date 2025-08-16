@@ -10,7 +10,7 @@ provider "aws" {
 }
 
 # Create R53 Zone
-resource "aws_route53_zone" "domain" {
+resource "aws_route53_zone" "mydomain" {
   name = var.domain_name
 }
 
