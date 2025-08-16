@@ -42,6 +42,8 @@ jobs:
         run: terraform validate
 
       - name: Terraform Apply
-        if: ${{ github.ref == 'refs/heads/main' }}
+        working-directory: terraform
+        run: terraform apply -auto-approve -var="domain_name=${{ secrets.DOMAIN_NAME }}"  -var="mail=${{ secrets.MAIL}}" -var="region=${{ secrets.AWS_REGION}}"
+      'refs/heads/main' }}
         working-directory: terraform
         run: terraform apply -input=false -auto-approve tfplan
