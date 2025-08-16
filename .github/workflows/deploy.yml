@@ -27,10 +27,10 @@ jobs:
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4.3.1
         with:
+          audience: sts.amazonaws.com
           role-to-assume: "arn:aws:iam::728399044591:role/git-oidc-role"
           aws-region: ${{ secrets.AWS_REGION}}
-          audience: sts.amazonaws.com
-
+          
       - name: Intialize Terraform
         working-directory: terraform
         run: terraform init
