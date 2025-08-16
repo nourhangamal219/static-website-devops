@@ -36,6 +36,7 @@ jobs:
         run: terraform init
         
       - name: Terraform Plan
+        working-directory: terraform
         run: terraform plan -var="domain_name=${{ secrets.DOMAIN_NAME }}"  -var="mail=${{ secrets.MAIL}}" -var="region=${{ secrets.AWS_REGION}}" -no-color > tfplan.txt
 
       - name: Upload Plan Output
