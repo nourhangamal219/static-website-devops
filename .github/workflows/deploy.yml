@@ -66,3 +66,21 @@ jobs:
       - name: Terraform Apply
         working-directory: terraform
         run: terraform apply -auto-approve -var="domain_name=${{ secrets.DOMAIN_NAME }}"  -var="mail=${{ secrets.MAIL}}" -var="region=${{ secrets.AWS_REGION}}"
+
+  apply:
+    needs: plan
+    runs-on: ubuntu-latest
+    environment: any
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Terraform Apply
+        working-directory: terraform
+        run: terraform apply -auto-approve -var="domain_name=${{ secrets.DOMAIN_NAME }}"  -var="mail=${{ secrets.MAIL}}" -var="region=${{ secrets.AWS_REGION}}"
+
+
+
+
+
+
+
