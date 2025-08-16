@@ -26,7 +26,7 @@ resource "aws_acm_certificate" "cert" {
 }
 
 # Add cert validation records in R53 zone
-resource "aws_route53_record" "add-cert" {
+resource "aws_route53_record" "add-cert-to-domain" {
   for_each = {
     for dvo in aws_acm_certificate.cert.domain_validation_options : dvo.domain_name => {
       name   = dvo.resource_record_name
