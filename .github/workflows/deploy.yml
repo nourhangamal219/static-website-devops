@@ -1,0 +1,64 @@
+name: terraform-apply-on-merge
+
+on:
+  push:
+    branches: [ "main" ]             # runs after you click "Merge"
+    paths:
+      - "terraform/**"               # only if something in terraform/ changed
+
+permissions:
+  id-token: write                     # OIDC → AWS
+  contents: read
+
+concurrency:
+  group: terraform-apply-main         # avoid overlapping applies
+  cancel-in-progress: false
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/gha-oidc-deployer
+          aws-region: ${{ env.AWS_REGION }}
+          role-session-name: apply-${{ github.run_id }}
+          role-duration-seconds: 3600
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.9.5
+
+      # Optional but recommended if you use an S3/DynamoDB backend
+      - name: Terraform Init
+        working-directory: terraform
+        run: terraform init -input=false
+
+      - name: Terraform Validate
+        working-directory: terraform
+        run: terraform validate
+
+      - name: Terraform Plan (for logs)
+        working-directory: terraform
+        run: |
+          terraform plan -input=false -no-color -out=tfplan | tee plan.out
+          terraform show -no-color tfplan > plan.txt
+
+      - name: Upload plan artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: tfplan-${{ github.run_id }}
+          path: |
+            terraform/tfplan
+            terraform/plan.txt
+
+      - name: Terraform Apply
+        if: ${{ github.ref == 'refs/heads/main' }}
+        working-directory: terraform
+        run: terraform apply -input=false -auto-approve tfplan
