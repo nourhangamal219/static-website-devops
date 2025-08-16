@@ -3,6 +3,9 @@ name: Configuring Static Website on S3
 # Trigger workflow when a pull request is raised to merge with main
 on:
  pull_request:
+   types:
+      - opened
+      - synchronize  # Trigger when changes are pushed to an open PR
    paths:
    - terraform/**
  
