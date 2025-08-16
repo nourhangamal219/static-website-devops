@@ -3,7 +3,7 @@ variable "region" {
 }
 
 variable "domain_name" {
-  description = "Custom domain name used by R53 zone"
+  description = "Custom domain name used by R53"
   type        = string
 }
 
