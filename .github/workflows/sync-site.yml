@@ -7,7 +7,7 @@ on:
       - "site/**"               # only if something in terraform/ changed
 
 permissions:
-  id-token: write                     # OIDC → AWS
+  id-token: write                    # OIDC → AWS
   contents: read
 
 jobs:
@@ -26,4 +26,4 @@ jobs:
           aws-region: ${{ secrets.AWS_REGION}}
 
       - name: Sync site/ to S3
-        run: aws s3 sync site/ s3://$ {{secrets.DOMAIN_NAME}} --delete 
+        run: aws s3 sync site/ s3://${{ secrets.DOMAIN_NAME}}/ --delete 
