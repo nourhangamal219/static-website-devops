@@ -75,7 +75,7 @@ resource "aws_s3_bucket_policy" "public-content" {
     Statement = [{
       Sid       = "PublicReadGetObject"
       Effect    = "Allow"
-      Principal = "*"
+      Principal = "${aws_cloudfront_distribution.site-cache.arn}"
       Action    = ["s3:GetObject"]
       Resource  = "${aws_s3_bucket.static-website-bucket.arn}/*"
     }]
