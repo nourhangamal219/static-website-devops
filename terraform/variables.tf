@@ -8,7 +8,7 @@ variable "domain_name" {
 }
 
 variable "mail" {
-  description = "E-mail to get website health notification"
+  description = "E-mail to get site health notification"
   type        = string
 }
 
