@@ -1,0 +1,2 @@
+AppStream 2.0 ISV Workshop Series
+Copyright 2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
