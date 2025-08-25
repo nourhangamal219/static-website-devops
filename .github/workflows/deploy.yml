@@ -43,4 +43,4 @@ jobs:
 
       - name: Terraform Apply
         working-directory: terraform
-        run: terraform destroy -auto-approve -var="domain_name=${{ secrets.DOMAIN_NAME }}"  -var="mail=${{ secrets.MAIL}}" -var="region=${{ secrets.AWS_REGION}}"
+        run: terraform apply -auto-approve -var="domain_name=${{ secrets.DOMAIN_NAME }}"  -var="mail=${{ secrets.MAIL}}" -var="region=${{ secrets.AWS_REGION}}"
